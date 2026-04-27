@@ -44,8 +44,19 @@ const { ObjectId } = require('mongodb');
  * Hint: insertOne. Nothing fancy.
  */
 async function signupUser(db, userData) {
-  // TODO: implement
-  throw new Error('signupUser not implemented');
+  const existing = await db.collection('users').findOne({ email: userData.email });
+  if (existing) {
+    throw new Error('Email already exists');
+  }
+
+  const result = await db.collection('users').insertOne({
+    email: userData.email,
+    passwordHash: userData.passwordHash,
+    name: userData.name,
+    createdAt: new Date()
+  });
+
+  return result.insertedId;
 }
 
 /**
@@ -64,8 +75,7 @@ async function signupUser(db, userData) {
  * Hint: findOne with an exact-match filter.
  */
 async function loginFindUser(db, email) {
-  // TODO: implement
-  throw new Error('loginFindUser not implemented');
+  return await db.collection('users').findOne({ email });
 }
 
 /**
@@ -84,8 +94,8 @@ async function loginFindUser(db, email) {
  * Hint: find with two filter conditions, then .sort().toArray().
  */
 async function listUserProjects(db, ownerId) {
-  // TODO: implement
-  throw new Error('listUserProjects not implemented');
+  arr=await db.collection('projects').find({ownerId: ownerId}).sort({createdAt: -1}).toArray()
+  return arr
 }
 
 /**
@@ -102,8 +112,8 @@ async function listUserProjects(db, ownerId) {
  * Hint: insertOne again — just remember to add the defaults yourself.
  */
 async function createProject(db, projectData) {
-  // TODO: implement
-  throw new Error('createProject not implemented');
+  const result=await db.collection('projects').insertOne({ownerId:projectData.ownerId,name:projectData.name,description:projectData.description,archived:false,createdAt:new Date()})
+  return {insertedId:result.insertedId}
 }
 
 /**
@@ -122,8 +132,11 @@ async function createProject(db, projectData) {
  * Hint: updateOne with the $set operator.
  */
 async function archiveProject(db, projectId) {
-  // TODO: implement
-  throw new Error('archiveProject not implemented');
+  const result=await db.collection('projects').updateOne({_id:projectId},{$set:{archived:true}})
+   return {
+    matchedCount: result.matchedCount,
+    modifiedCount: result.modifiedCount
+  };
 }
 
 /**
@@ -144,8 +157,19 @@ async function archiveProject(db, projectId) {
  *       the caller passed one. Then chain .sort({ priority: -1, createdAt: -1 }).
  */
 async function listProjectTasks(db, projectId, status) {
-  // TODO: implement
-  throw new Error('listProjectTasks not implemented');
+  const filter = { projectId: projectId };
+
+  if (status) {
+    filter.status = status;
+  }
+
+  const arr = await db
+    .collection('tasks')
+    .find(filter)
+    .sort({ priority: -1, createdAt: -1 })
+    .toArray();
+
+  return arr;
 }
 
 /**
@@ -170,8 +194,17 @@ async function listProjectTasks(db, projectId, status) {
  * Hint: insertOne. Apply defaults for any missing optional fields.
  */
 async function createTask(db, taskData) {
-  // TODO: implement
-  throw new Error('createTask not implemented');
+  const result = await db.collection('tasks').insertOne({
+    ownerId: taskData.ownerId,
+    projectId: taskData.projectId,
+    title: taskData.title,
+    priority: taskData.priority || 1,
+    tags: taskData.tags || [],
+    subtasks: taskData.subtasks || [],
+    status: "todo",
+    createdAt: new Date()
+  });
+  return { insertedId: result.insertedId };
 }
 
 /**
@@ -187,8 +220,14 @@ async function createTask(db, taskData) {
  * Hint: updateOne + $set.
  */
 async function updateTaskStatus(db, taskId, newStatus) {
-  // TODO: implement
-  throw new Error('updateTaskStatus not implemented');
+  const result = await db.collection('tasks').updateOne(
+    { _id: taskId },
+    { $set: { status: newStatus } }
+  );
+  return {
+    matchedCount: result.matchedCount,
+    modifiedCount: result.modifiedCount
+  };
 }
 
 /**
